@@ -46,16 +46,14 @@ public class Main {
 							Integer.valueOf(args[i + 2]));
 					Thread thread = new Thread(server);
 					thread.start();
-					// play song for 30 seconds
 					server.playSong("staticx.wav");
-					Thread.sleep(30000);
-					server.close();
-					thread.join();
+//					server.close();
+//					thread.join();
 				} catch (Exception e) {
-					System.err.println(e.getMessage());
+					System.err.println("main() start: " + e.getMessage());
 				}
 			} else if (args[i].equals("client")) {
-				// TODO
+				new Thread(new ClientImpl("tcp", "127.0.0.1", "222", "hola")).start();
 			} else
 				throw new IllegalArgumentException();
 		} catch (ArrayIndexOutOfBoundsException e) {

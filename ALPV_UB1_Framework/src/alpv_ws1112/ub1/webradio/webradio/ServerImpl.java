@@ -23,7 +23,7 @@ public class ServerImpl implements Server {
 	// main socket
 	ServerSocket serversocket;
 	// client list
-	private Vector<ConnectionHandler> connections;
+	private Vector<ConnectionHandler> connections = new Vector<ServerImpl.ConnectionHandler>();
 
 	public ServerImpl(String netprotocol, int port) {
 		this.netprotocol = netprotocol;
@@ -42,10 +42,13 @@ public class ServerImpl implements Server {
 							serversocket.accept());
 					// (blocks until new client tries to connect)
 					System.out.println("Server: client accepted");
-					connections.add(c);
+
+					synchronized (connections) {
+						connections.add(c);
+					}
 				}
 			} catch (Exception e) {
-				System.err.println(e.getMessage());
+				System.err.println("main routine error: " + e.getMessage());
 			}
 
 		} else if (netprotocol.equals("udp")) {
@@ -61,9 +64,11 @@ public class ServerImpl implements Server {
 		// don't accept new connections
 		running = false;
 		// close connections
-		Iterator<ConnectionHandler> i = connections.iterator();
-		while (i.hasNext())
-			i.next().close();
+		synchronized (connections) {
+			Iterator<ConnectionHandler> i = connections.iterator();
+			while (i.hasNext())
+				i.next().close();
+		}
 	}
 
 	/* Playsong blockiert caller solange gestreamt wird */
@@ -75,15 +80,19 @@ public class ServerImpl implements Server {
 		AudioInputStream ais = AudioSystem.getAudioInputStream(new File(
 				soundfile));
 		AudioFormat format = ais.getFormat();
-		for (int i = 0; i < connections.size(); i++)
-			connections.elementAt(i).initStreaming(format);
+		synchronized (connections) {
+			Iterator<ConnectionHandler> it = connections.iterator();
+			while (it.hasNext())
+				it.next().initStreaming(format);
 
-		// Push data from audio stream into network
-		byte[] data = new byte[buffLen];
-		while (ais.read(data) != -1)
-			for (int i = 0; i < connections.size(); i++)
-				connections.elementAt(i).streamData(data);
-
+			// Push data from audio stream into network
+			byte[] data = new byte[buffLen];
+			while (ais.read(data) != -1) {
+				it = connections.iterator();
+				while (it.hasNext())
+					it.next().streamData(data);
+			}
+		}
 	}
 
 	private class ConnectionHandler {
@@ -116,7 +125,7 @@ public class ServerImpl implements Server {
 				oos.writeObject(format);
 				// close oos and reopen outputStream??
 			} catch (Exception e) {
-				System.out.println(e.getMessage());
+				System.err.println("initStream error: " + e.getMessage());
 			}
 		}
 
