@@ -41,17 +41,30 @@ public class Main {
 			}
 
 			if (args[i].equals("server")) {
-				try {
 					Server server = new ServerImpl(args[i + 1],
 							Integer.valueOf(args[i + 2]));
 					Thread thread = new Thread(server);
 					thread.start();
-					server.playSong("staticx.wav");
+					try {
+						Thread.sleep(10000);
+					} catch (InterruptedException e) {
+						System.err.println("main() start: " + e.getMessage());
+						e.printStackTrace();
+					}
+					try {
+						server.playSong("staticx.wav");
+					} catch (MalformedURLException e) {
+						System.err.println("main() start: " + e.getMessage());
+						e.printStackTrace();
+					} catch (UnsupportedAudioFileException e) {
+						System.err.println("main() start: " + e.getMessage());
+						e.printStackTrace();
+					} catch (IOException e) {
+						System.err.println("main() start: " + e.getMessage());
+						e.printStackTrace();
+					}
 //					server.close();
 //					thread.join();
-				} catch (Exception e) {
-					System.err.println("main() start: " + e.getMessage());
-				}
 			} else if (args[i].equals("client")) {
 				new Thread(new ClientImpl("tcp", "127.0.0.1", "222", "hola")).start();
 			} else
