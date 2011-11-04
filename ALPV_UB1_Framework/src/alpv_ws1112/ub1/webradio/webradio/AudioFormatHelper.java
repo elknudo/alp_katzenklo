@@ -1,5 +1,12 @@
 package alpv_ws1112.ub1.webradio.webradio;
+import java.io.File;
+import java.io.IOException;
+
 import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.UnsupportedAudioFileException;
+
 
 public class AudioFormatHelper {
 	private static String format_header = "frmt:";
@@ -49,6 +56,11 @@ public class AudioFormatHelper {
 			return null;
 		String sub = input.substring(input.indexOf(header_sign) + 1);
 		byte[] out = sub.getBytes();
+		
+//		for(int i=0; i < out.length; i++)
+//			if(out[i] == 0x000A)
+//				System.err.println("Warning byte Newline " + i);
+	
 		return out;
 	}
 
@@ -56,6 +68,8 @@ public class AudioFormatHelper {
 		String out = byte_header;
 		String sub = new String(input);
 		out = out.concat(sub);
+		out = out.replace('\n', (char)0x001E);
+		out = out.replace('\r', (char)0x001E);
 		return out;
 	}
 
@@ -65,15 +79,41 @@ public class AudioFormatHelper {
 	 * @param args
 	 */
 	public static void main(String[] args) {
+		System.out.println("real data - statix.wav");
+		AudioInputStream ais = null;
+		try {
+			ais = AudioSystem.getAudioInputStream(new File("staticx.wav"));
+		} catch (UnsupportedAudioFileException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		// get Forma
+		AudioFormat format = ais.getFormat();
+		System.out.println("In:");
+		System.out.println(format.toString());
+		String fmInn = audioFormatToString(format);
+		System.out.println(fmInn);
+		System.out.println("Out:");
+		AudioFormat fmOutt = stringToAudioFormat(fmInn);
+		System.out.println(fmOutt.toString());
+		System.out.println(audioFormatToString(fmOutt));
+		
 		// test audioformat tubing
+		System.out.println("fake data");
 		AudioFormat fmIn = new AudioFormat(0.1443f, 2, 3, true, false);
 		String temp = audioFormatToString(fmIn);
 		AudioFormat fmOut = stringToAudioFormat(temp);
 		String test = audioFormatToString(fmOut);
-		
+
+		System.out.println("In:");
+		System.out.println(fmIn);
 		System.out.println(temp);
+		System.out.println("Out:");
+		System.out.println(fmOut);
 		System.out.println(test);
-		
 		
 		System.out.println();
 		// test bytes

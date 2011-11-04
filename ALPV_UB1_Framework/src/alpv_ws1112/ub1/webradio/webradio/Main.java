@@ -66,7 +66,7 @@ public class Main {
 //					server.close();
 //					thread.join();
 			} else if (args[i].equals("client")) {
-				new Thread(new ClientImpl("tcp", "127.0.0.1", "222", "hola")).start();
+				new Thread(new ClientImpl(args[i + 1], args[i + 2], args[i + 3], args[i + 4])).start();
 			} else
 				throw new IllegalArgumentException();
 		} catch (ArrayIndexOutOfBoundsException e) {

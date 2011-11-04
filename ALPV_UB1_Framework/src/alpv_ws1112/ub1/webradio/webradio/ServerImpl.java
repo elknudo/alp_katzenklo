@@ -45,7 +45,7 @@ public class ServerImpl implements Server {
 	/* Playsong blockiert caller solange gestreamt wird */
 	public void playSong(String path) throws MalformedURLException,
 			UnsupportedAudioFileException, IOException {
-		if(jb == null) {
+		if (jb == null) {
 			jb = new JukeBox();
 			jbThread = new Thread(jb);
 			jbThread.start();
@@ -131,8 +131,7 @@ public class ServerImpl implements Server {
 
 	private class JukeBox implements Runnable {// behaviour & server state
 		// buffer
-		private final int buffLen = 1024;
-		private byte[] nextSample = new byte[buffLen];
+		private final int buffLen = 4096;
 
 		// shared objects
 		// synchronize!
@@ -140,7 +139,6 @@ public class ServerImpl implements Server {
 		private AudioFormat format;
 		private AtomicBoolean playing = new AtomicBoolean(false);
 
-		private int dbgint = 0;
 		/*
 		 * Stop playback while changeSong() run continues playback after
 		 * changeSong() has finished
@@ -169,11 +167,12 @@ public class ServerImpl implements Server {
 		}
 
 		public void run() {
+			long tBegin = System.currentTimeMillis();
+			long tEnd = 0;
 			while (running.get()) {
 				if (playing.get()) {
 					// send next sample
 					byte[] data = new byte[buffLen];
-					dbgint++;
 					// read data
 					synchronized (ais) {
 						try {
@@ -192,18 +191,46 @@ public class ServerImpl implements Server {
 						it = connections.iterator();
 						while (it.hasNext()) {
 							synchronized (format) {
-								it.next().streamData(format, data, dbgint);
+								it.next().streamData(format, data);
 							}
 						}
 					}
-					// DEBUG BEGIN
-//					try {
-//						Thread.sleep(25);
-//					} catch (InterruptedException e) {
-//						// TODO Auto-generated catch block
-//						e.printStackTrace();
-//					}
-					// DEBUG END
+					try {
+						/*
+						 * Schedule playback
+						 * 
+						 * example: samplerate = 44100.0 Hz sample duration d =
+						 * 1 / 44100 (seconds) = 0,000022s d in milliseconds = d
+						 * * 1000 = 0,000022s * 1000 = 0,022 ms
+						 * 
+						 * example cont.: one frame lasts 0,022 ms a buffer
+						 * holds 1024 bytes a frame has 4 bytes frames per
+						 * buffer = 1024/4 = 256 frames
+						 * 
+						 * one buffer with 256 frames, each lasting 0.000022s or
+						 * 0.022ms lasts 256*0.022ms = 5,8ms
+						 */
+						float sampleRate;
+						int frameSize;
+						synchronized (format) {
+							sampleRate = format.getSampleRate();
+							frameSize = format.getFrameSize();
+						}
+
+						double frame_duration_millisecs = 1000 / sampleRate;
+						int how_many_frames_per_buffer = (int) (buffLen / (double) frameSize);
+						long buffer_duration = (long) (frame_duration_millisecs * how_many_frames_per_buffer);
+
+						tEnd = System.currentTimeMillis();
+						long tElapsed = tEnd - tBegin;
+						long time_to_sleep = buffer_duration - tElapsed;
+						if (time_to_sleep > 0)
+							Thread.sleep(time_to_sleep);
+						tBegin = System.currentTimeMillis();
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				} else { // playing == false
 					// don't send anything
 				}
@@ -222,7 +249,7 @@ public class ServerImpl implements Server {
 		private AudioFormat old_format = null;
 
 		private PrintWriter toClientPrintWriter;
-		
+
 		public ConnectionHandler(Socket s) {
 			try {
 				// open streams for communication
@@ -239,24 +266,21 @@ public class ServerImpl implements Server {
 		}
 
 		// Could be a problem: if format changes, client won't know
-		public void streamData(AudioFormat format, byte[] data, int dbgint) {
+		public void streamData(AudioFormat format, byte[] data) {
 			if (!format.equals(old_format)) {
 				old_format = format;
 				// tell client about the audio format
-				String formatString = AudioFormatHelper.audioFormatToString(format);
+				String formatString = AudioFormatHelper
+						.audioFormatToString(format);
 				toClientPrintWriter.flush();
 				toClientPrintWriter.println(formatString);
 
 			}
-			
+
 			// send music
 			String musicString = AudioFormatHelper.bytesToString(data);
 			toClientPrintWriter.flush();
 			toClientPrintWriter.println(musicString);
-
-			
-			//System.out.println("streamData() send:     " + data.length);
-
 		}
 
 		private void close() {

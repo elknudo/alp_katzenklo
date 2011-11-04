@@ -75,12 +75,11 @@ public class ClientImpl implements Client {
 					}
 					if ((music = AudioFormatHelper.stringToBytes(incoming)) != null) {
 						// music message received
-						// System.out.println("Client: music msg received size: "
-						// + music.length);
 						try {
 							line.write(music, 0, music.length);
 						} catch (IllegalArgumentException e) {
-							System.err.println("Client music write error");
+							System.err.println("Client music write error: "
+									+ e.getMessage());
 						}
 					}
 				}
