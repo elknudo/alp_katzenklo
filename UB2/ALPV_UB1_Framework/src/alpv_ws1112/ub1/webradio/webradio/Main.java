@@ -21,7 +21,7 @@ public class Main {
 	 */
 	public static void main(String[] args) {
 		try {
-			boolean useGUI = false;
+			boolean useGUI = true;
 			int i = -1;
 
 			
@@ -46,7 +46,7 @@ public class Main {
 					Thread thread = new Thread(server);
 					thread.start();
 					try {
-						Thread.sleep(10000);
+						Thread.sleep(1000);
 					} catch (InterruptedException e) {
 						System.err.println("main() start: " + e.getMessage());
 						e.printStackTrace();

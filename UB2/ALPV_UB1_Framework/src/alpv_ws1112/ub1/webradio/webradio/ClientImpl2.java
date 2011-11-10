@@ -6,6 +6,8 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.SourceDataLine;
 
@@ -22,8 +24,8 @@ public class ClientImpl2 implements Client {
 	private String username;
 	private Socket clientsocket;
 	private ArrayList<String> messages = new ArrayList<String>(); 
-	private boolean music = true;
-	private boolean end = false;
+	private AtomicBoolean music = new AtomicBoolean(true);
+	private AtomicBoolean end = new AtomicBoolean(false);
 	private UIClient ui;
 	
 	
@@ -87,7 +89,7 @@ public class ClientImpl2 implements Client {
 						line.open();
 						line.start();
 					}
-					if (data != null && music) {
+					if (data != null && music.get()) {
 						// music message received
 						try {
 							line.write(data, 0, data.length);
@@ -96,7 +98,9 @@ public class ClientImpl2 implements Client {
 									+ e.getMessage());
 						}
 					}
-					if(end){
+					if(end.get()){
+						is.close();
+						os.close();
 						break;
 					}
 				}
@@ -117,9 +121,8 @@ public class ClientImpl2 implements Client {
 		System.out.println("closing connection");
 		try {
 			clientsocket.close();
+			
 		} catch (Exception e) {
-			System.out.println("closing connection");
-			e.printStackTrace();
 			return;
 		}
 	}
@@ -144,7 +147,7 @@ public class ClientImpl2 implements Client {
 	}
 
 	public void mute() {
-		music = !music;
+		music.set(!music.get());
 	}
 	
 }
