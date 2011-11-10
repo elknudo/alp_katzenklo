@@ -1,0 +1,16 @@
+package alpv_ws1112.ub1.webradio.proto;
+
+option java_package = "alpv_ws1112.ub1.webradio.proto";
+option java_outer_classname = "PacketProtos";
+
+message Message {
+	message Chat{
+		repeated string username = 1;
+		repeated string message = 2;
+	}
+	
+	optional Chat chat = 1;
+	optional string format = 2; 
+	optional bytes data = 3;
+	
+}
