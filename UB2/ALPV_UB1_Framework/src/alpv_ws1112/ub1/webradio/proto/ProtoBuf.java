@@ -10,7 +10,7 @@ import com.google.protobuf.ByteString;
 public class ProtoBuf {	
 	public static Message buildMessage(String username, List<String> messages, String format, byte[] data) {
 		Message.Builder builder = Message.newBuilder();
-		if(username!=null && messages != null)
+		if(username!=null && messages.size()!=0)
 			builder.setChat(buildChat(username, messages));
 		
 		if(format != null)

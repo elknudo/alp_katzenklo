@@ -6,7 +6,6 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
-
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.SourceDataLine;
 
@@ -23,6 +22,10 @@ public class ClientImpl2 implements Client {
 	private String username;
 	private Socket clientsocket;
 	private ArrayList<String> messages = new ArrayList<String>(); 
+	private boolean music = true;
+	private boolean end = false;
+	private UIClient ui;
+	
 	
 	public ClientImpl2(String proto, String serveraddr, String port, String user) {
 		this.protocoll = proto;
@@ -33,13 +36,12 @@ public class ClientImpl2 implements Client {
 
 	@Override
 	public void run() {
-		messages.add("peace bitch!");
-		
+		ui = new UIClient(username,this);
+		ui.run();
+	
 		try {
 			connect(address);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 
 		close();
@@ -50,7 +52,11 @@ public class ClientImpl2 implements Client {
 		System.out.println("connecting...");
 		try {
 			if (protocoll.equals("tcp")) {
-				clientsocket = new Socket(serverAddress.getAddress(), port);
+				try{
+					clientsocket = new Socket(serverAddress.getAddress(), port);
+				}catch (Exception e) {
+					return;
+				}
 
 				InputStream is = clientsocket.getInputStream();
 				OutputStream os = clientsocket.getOutputStream();
@@ -71,9 +77,7 @@ public class ClientImpl2 implements Client {
 					byte[] data = tm.getData().toByteArray();
 					
 					Chat c = tm.getChat();
-						for(int i=0;i<c.getMessageCount();i++){
-							System.out.println(c.getUsername(i)+" : "+ c.getMessage(i));
-						}
+					ui.pushChat(c);
 					
 					if (!format.equals(oldformat)) {
 						// format message received
@@ -83,7 +87,7 @@ public class ClientImpl2 implements Client {
 						line.open();
 						line.start();
 					}
-					if (data != null) {
+					if (data != null && music) {
 						// music message received
 						try {
 							line.write(data, 0, data.length);
@@ -92,6 +96,9 @@ public class ClientImpl2 implements Client {
 									+ e.getMessage());
 						}
 					}
+					if(end){
+						break;
+					}
 				}
 
 			} else if (protocoll.equals("udp")) {
@@ -99,39 +106,45 @@ public class ClientImpl2 implements Client {
 			} else if (protocoll.equals("mc")) {
 
 			} else
-				// do nothing if not correct protocoll
+				// do nothing if not correct protocol
 				return;
 		} catch (Exception e) {
-			e.printStackTrace();
-			System.out
-					.println("Make sure you entered the host IP and the port number correctly.");
+			System.out.println("Make sure you entered the host IP and the port number correctly.");
 		}
 	}
 
-	@Override
 	public void close() {
 		System.out.println("closing connection");
 		try {
 			clientsocket.close();
 		} catch (Exception e) {
+			System.out.println("closing connection");
+			e.printStackTrace();
 			return;
 		}
 	}
 
-	@Override
 	public void sendChatMessage(String message) throws IOException {
-		messages.add(message);
+		synchronized (messages) {
+			messages.add(message);
+		}
 	}
 
-	public void sendChatMessages(OutputStream os){
-		Message tm = ProtoBuf.buildMessage(username, messages);
-		try {
-			tm.writeDelimitedTo(os);
-			messages.clear();
-		} catch (IOException e) {
-			System.err.println("Error while writing Messages");
-			e.printStackTrace();
+	public  void sendChatMessages(OutputStream os){
+		synchronized(messages){
+			Message tm = ProtoBuf.buildMessage(username, messages);
+			try {
+				tm.writeDelimitedTo(os);
+				messages.clear();
+			} catch (IOException e) {
+				System.err.println("Error while writing Messages");
+				e.printStackTrace();
+			}
 		}
+	}
+
+	public void mute() {
+		music = !music;
 	}
 	
 }

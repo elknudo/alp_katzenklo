@@ -64,7 +64,6 @@ public class ServerImpl2 implements Server {
 			listener_thread.join();
 			jbThread.join();
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		// close connections
@@ -205,9 +204,7 @@ public class ServerImpl2 implements Server {
 									Chat c = message.getChat();
 									users.addAll(c.getUsernameList());
 									messages.addAll(c.getMessageList());
-									if(c.getMessageList().size()!=0)
-										for(String s : c.getMessageList())
-											System.out.println(s);
+									
 								} catch (IOException e) {
 									// TODO Auto-generated catch block
 									e.printStackTrace();
@@ -219,15 +216,21 @@ public class ServerImpl2 implements Server {
 						}
 						
 						it = connections.iterator();
+						Message tm;
+						if(messages.size()!=0)
+							tm = ProtoBuf.buildMessage(users,messages,AudioFormatHelper.audioFormatToString(format), data);
+						else
+							tm = ProtoBuf.buildMessage(AudioFormatHelper.audioFormatToString(format), data);
 						
 						while (it.hasNext()) {
 							synchronized (format) {
-								Message tm;
-								if(messages.size()!=0)
-									tm = ProtoBuf.buildMessage(users,messages,AudioFormatHelper.audioFormatToString(format), data);
-								else
-									tm = ProtoBuf.buildMessage(AudioFormatHelper.audioFormatToString(format), data);
-								it.next().streamData(tm);
+								try{
+									ch = it.next();
+									ch.streamData(tm);
+								}catch (Exception e){
+									it.remove();
+									System.out.println("removed client with closed port");
+								}
 							}
 						}
 						messages.clear();
@@ -300,15 +303,8 @@ public class ServerImpl2 implements Server {
 
 		
 		// Could be a problem: if format changes, client won't know
-		public void streamData(Message tm) {
-			try {
-				tm.writeDelimitedTo(toClientOutputStream);
-				
-				
-			} catch (IOException e) {
-				System.err.println("Error while writing data");
-				e.printStackTrace();
-			}
+		public void streamData(Message tm) throws IOException {
+			tm.writeDelimitedTo(toClientOutputStream);
 		}
 		private void close() {
 			try {
