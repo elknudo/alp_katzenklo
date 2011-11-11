@@ -3,6 +3,7 @@ package alpv_ws1112.ub1.webradio.webradio;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+
 import javax.sound.sampled.*;
 
 import java.util.concurrent.atomic.*;
@@ -33,7 +34,11 @@ public class ServerImpl2 implements Server {
 	// Playback stuff
 	private JukeBox jb = null;
 	private Thread jbThread = null;
-
+	private ConnectionHandler ch = null;
+	
+	//GUI
+	private UIServer ui;
+	
 	// c'tor
 	public ServerImpl2(String netprotocol, int port) {
 		listener = new ClientListener(netprotocol, port);
@@ -42,7 +47,7 @@ public class ServerImpl2 implements Server {
 	}
 
 	public void run() {
-		// running in "child"-threads
+		
 	}
 
 	/* Playsong blockiert caller solange gestreamt wird */
@@ -52,6 +57,7 @@ public class ServerImpl2 implements Server {
 			jb = new JukeBox();
 			jbThread = new Thread(jb);
 			jbThread.start();
+			
 		}
 		jb.changeSong(path);
 	}
@@ -96,18 +102,16 @@ public class ServerImpl2 implements Server {
 							+ " Connections on port " + port);
 					while (running.get()) {
 						// listen and accept new clients
-						ConnectionHandler c = new ConnectionHandler(
+						ch = new ConnectionHandler(
 								serversocket.accept());
 						// (blocks until new client tries to connect)
 						System.out.println("Server: client accepted");
 						synchronized (connections) {
-							connections.add(c);
+							connections.add(ch);
 						}
 
 					}
 				} catch (Exception e) {
-					System.err.println("Client Listener run() error: "
-							+ e.getMessage());
 				}
 
 			} else if (netprotocol.equals("udp")) {
@@ -117,6 +121,7 @@ public class ServerImpl2 implements Server {
 			} else
 				// do nothing if netprotocol is not valid
 				return;
+			close();
 		}
 
 		public void close() {
@@ -132,7 +137,7 @@ public class ServerImpl2 implements Server {
 	
 	}
 	
-	private class JukeBox implements Runnable {// behaviour & server state
+	public class JukeBox implements Runnable {// behaviour & server state
 		// buffer
 		private final int buffLen = 4096;
 
@@ -142,6 +147,9 @@ public class ServerImpl2 implements Server {
 		private AudioFormat format;
 		private AtomicBoolean playing = new AtomicBoolean(false);
 
+		private List<File> files = new ArrayList<File>();
+		
+		
 		/*
 		 * Stop playback while changeSong() run continues playback after
 		 * changeSong() has finished
@@ -168,20 +176,58 @@ public class ServerImpl2 implements Server {
 			System.out.println("Server: Starting to stream song " + filename);
 			playing.set(true);
 		}
+		public void nextSong(){
+			synchronized(files){
+				while(true && files.size()>0)
+					try {
+					changeSong(files.get(0).getAbsolutePath());
+					files.remove(0);
+				} catch (Exception e) {
+					files.remove(0);
+				}
+				
+			}
+			
+		}
+		public void addFile(File file){
+			synchronized(files){
+				files.add(file);
+			}
+		}
 
 		public void run() {
+			ui = new UIServer(jb);
+			
+			Thread thread = new Thread(ui);
+			thread.start();
+			
+			try {
+				thread.sleep(1000);
+			} catch (InterruptedException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			
 			long tBegin = System.currentTimeMillis();
 			long tEnd = 0;
 			ArrayList<String> messages = new ArrayList<String>();
 			ArrayList<String> users = new ArrayList<String>();
 			
 			while (running.get()) {
+				if(ui.jframe!=null)
+					running.set(ui.jframe.isVisible());
 				if (playing.get()) {
 					// send next sample
 					byte[] data = new byte[buffLen];
 					// read data
 					synchronized (ais) {
 						try {
+							if(ais.available()==0)
+								{
+								System.out.println("Server: song finished");
+								nextSong();
+								}
+							
 							ais.read(data);
 						} catch (IOException e) {
 							System.err.println("AudioInputStream.read() error in JukeBox.run()");
@@ -195,6 +241,7 @@ public class ServerImpl2 implements Server {
 						Iterator<ConnectionHandler> it;
 						it = connections.iterator();
 						ConnectionHandler ch;
+						//check if someone wants to send messages
 						while(it.hasNext()){
 							ch = it.next();
 							try {
@@ -202,6 +249,7 @@ public class ServerImpl2 implements Server {
 								try {
 									Message message = Message.parseDelimitedFrom(ch.fromClientInputStream);
 									Chat c = message.getChat();
+									//if yes add them to the lists
 									users.addAll(c.getUsernameList());
 									messages.addAll(c.getMessageList());
 									
@@ -215,6 +263,7 @@ public class ServerImpl2 implements Server {
 							}
 						}
 						
+						//send stream and all messages to everyone
 						it = connections.iterator();
 						Message tm;
 						if(messages.size()!=0)
@@ -229,12 +278,14 @@ public class ServerImpl2 implements Server {
 									ch.streamData(tm);
 								}catch (Exception e){
 									it.remove();
-									System.out.println("removed client with closed port");
+									System.out.println("Server: removed client with closed port");
 								}
 							}
 						}
+						//empty sent messages
 						messages.clear();
 						users.clear();
+						
 						
 					}
 					try {
@@ -277,6 +328,32 @@ public class ServerImpl2 implements Server {
 					// don't send anything
 				}
 			}
+			close();
+		}
+
+		public void stop() {
+			synchronized(playing)
+				{
+				playing.set(false);
+				}
+		}
+
+		public void start() {
+			synchronized(playing)
+			{
+			playing.set(true);
+			}
+		}
+		
+		public void close(){
+			System.out.println("Server: closing");
+			try {
+				ais.close();
+				listener.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -315,5 +392,7 @@ public class ServerImpl2 implements Server {
 				e.printStackTrace();
 			}
 		}
+		
+		
 	}
 }

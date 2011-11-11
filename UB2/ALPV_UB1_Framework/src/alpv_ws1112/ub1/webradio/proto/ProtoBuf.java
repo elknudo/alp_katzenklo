@@ -8,6 +8,7 @@ import alpv_ws1112.ub1.webradio.proto.PacketProtos.Message.Chat;
 import com.google.protobuf.ByteString;
 
 public class ProtoBuf {	
+	//just a hell of a lot builder so no one hast to type to much
 	public static Message buildMessage(String username, List<String> messages, String format, byte[] data) {
 		Message.Builder builder = Message.newBuilder();
 		if(username!=null && messages.size()!=0)
@@ -22,6 +23,7 @@ public class ProtoBuf {
 		assert (Message.isInitialized());
 		return Message;
 	}
+	
 	public static Message buildMessage(List<String> username, List<String> messages, String format, byte[] data) {
 		Message.Builder builder = Message.newBuilder();
 		if(username!=null && messages != null)
@@ -36,6 +38,7 @@ public class ProtoBuf {
 		assert (Message.isInitialized());
 		return Message;
 	}
+	
 	public static Message buildMessage(String format, byte[] data) {
 		Message.Builder builder = Message.newBuilder();
 		
@@ -52,6 +55,7 @@ public class ProtoBuf {
 	public static Message buildMessage(String username, List<String> messages) {
 		return buildMessage(username, messages, null,null);
 	}
+	
 	private static Chat buildChat(String username, List<String> messages) {
 		Chat.Builder builder = Chat.newBuilder();
 		
@@ -61,6 +65,7 @@ public class ProtoBuf {
 		
 		return builder.build();
 	}
+	
 	private static Chat buildChat(List<String> username, List<String> messages) {
 		Chat.Builder builder = Chat.newBuilder();
 		

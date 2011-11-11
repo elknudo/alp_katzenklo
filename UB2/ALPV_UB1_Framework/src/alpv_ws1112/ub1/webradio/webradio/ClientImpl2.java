@@ -18,15 +18,22 @@ import alpv_ws1112.ub1.webradio.proto.PacketProtos.Message.Chat;
 
 public class ClientImpl2 implements Client {
 
+	//needed to connect
 	private InetSocketAddress address;
 	private int port;
 	private String protocoll;
 	private String username;
-	private Socket clientsocket;
+	
+	//needed to connect to ui
 	private ArrayList<String> messages = new ArrayList<String>(); 
 	private AtomicBoolean music = new AtomicBoolean(true);
 	private AtomicBoolean end = new AtomicBoolean(false);
+	
 	private UIClient ui;
+	
+	private InputStream is;
+	private OutputStream os;
+	private Socket clientsocket;
 	
 	
 	public ClientImpl2(String proto, String serveraddr, String port, String user) {
@@ -36,11 +43,8 @@ public class ClientImpl2 implements Client {
 		this.username = user;
 	}
 
-	@Override
+	//start the gui then starts the client
 	public void run() {
-		ui = new UIClient(username,this);
-		ui.run();
-	
 		try {
 			connect(address);
 		} catch (IOException e) {
@@ -49,7 +53,7 @@ public class ClientImpl2 implements Client {
 		close();
 	}
 
-	@Override
+	//connect and deal with the connection
 	public void connect(InetSocketAddress serverAddress) throws IOException {
 		System.out.println("connecting...");
 		try {
@@ -57,11 +61,16 @@ public class ClientImpl2 implements Client {
 				try{
 					clientsocket = new Socket(serverAddress.getAddress(), port);
 				}catch (Exception e) {
-					return;
+					System.out.println("Couldn't reach server. Check parameters.");
 				}
 
-				InputStream is = clientsocket.getInputStream();
-				OutputStream os = clientsocket.getOutputStream();
+				ui = new UIClient(username,this);
+				ui.run();
+			
+				
+				
+				is = clientsocket.getInputStream();
+				os = clientsocket.getOutputStream();
 
 				// Open line
 				SourceDataLine line = null;
@@ -78,19 +87,20 @@ public class ClientImpl2 implements Client {
 					
 					byte[] data = tm.getData().toByteArray();
 					
+					//send chat messages to the ui
 					Chat c = tm.getChat();
 					ui.pushChat(c);
 					
+					//if format change open new line
 					if (!format.equals(oldformat)) {
-						// format message received
 						oldformat = format;
-//						System.out.println("Client: format msg received");
 						line = AudioSystem.getSourceDataLine(AudioFormatHelper.stringToAudioFormat(format));
 						line.open();
 						line.start();
 					}
+					
+					//stream music
 					if (data != null && music.get()) {
-						// music message received
 						try {
 							line.write(data, 0, data.length);
 						} catch (IllegalArgumentException e) {
@@ -98,9 +108,15 @@ public class ClientImpl2 implements Client {
 									+ e.getMessage());
 						}
 					}
+					
+					synchronized (ui.jframe) {
+						end.set(!ui.jframe.isVisible());
+					}
+					//if end is set to true break while and shutdown
 					if(end.get()){
 						is.close();
 						os.close();
+						clientsocket.close();
 						break;
 					}
 				}
@@ -117,23 +133,23 @@ public class ClientImpl2 implements Client {
 		}
 	}
 
+	//close connections and shutdown
 	public void close() {
-		System.out.println("closing connection");
-		try {
-			clientsocket.close();
-			
-		} catch (Exception e) {
-			return;
-		}
+		ui.jframe.dispose();
+		System.out.println("client: shutting down");
+		end.set(true);
 	}
+	
 
+	//add a message to messages until they can be sent
 	public void sendChatMessage(String message) throws IOException {
 		synchronized (messages) {
 			messages.add(message);
 		}
 	}
 
-	public  void sendChatMessages(OutputStream os){
+	//send all messages that have piled up till now
+	private  void sendChatMessages(OutputStream os){
 		synchronized(messages){
 			Message tm = ProtoBuf.buildMessage(username, messages);
 			try {
@@ -146,8 +162,10 @@ public class ClientImpl2 implements Client {
 		}
 	}
 
+	//mute music
 	public void mute() {
 		music.set(!music.get());
 	}
+
 	
 }
