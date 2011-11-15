@@ -1,0 +1,40 @@
+UDP Pakete müssen sortiert werden
+
+dazu bekommt jedes Paket das Feld 'index'
+
+dieses Label enthält werte von 0 bis 511
+
+Wenn ein Paket beim Client ankommt wird es mit Hilfe der Klasse PacketSequencer eingeordnet.
+
+PacketSequencer benutzt dazu ähnlich wie TCP ein 'Sliding Window'
+
+Das Fenster verschiebt sich immer dann, wenn ein Paket herausgenommen wird
+
+|--------|	8 Pakete Fenster
+ ^
+ Abspielposition
+ 
+ 
+ Variante 1 (implementiert):
+ 
+ Wenn Pakete ankommen, deren Index zu groß ist, werden sie verworfen. (Bsp. der Server sendet zu schnell)
+ 
+ |-------|
+ ^			^
+ Play Pos	Neues Paket
+ 			Zu schnell geschickt! / Zu langsam abgespielt
+ 			
+ 			
+ 			
+ Variante 2:
+ 
+ Das Fenster wird nach rechts verschoben, wodurch gespeicherte Pakete verloren gehen
+ 
+|-------|							===>		|-------|					===>		|-------|
+ ^          ^								^			^								 ^     ^
+Abspielpos	Incoming						alte pos	Incoming					neue Pos Incoming
+
+
+Da der Index nur im Bereich von 0 bis 511 liegen darf, kommt es zu einem Überlauf.
+Nachrichten mit einem index größer als 511 sollten daher modulo 512 rechnen.
+Die Einordnung in eine Sequenz funktioniert auch über den Sprung von 511 zu 0 hinweg.
