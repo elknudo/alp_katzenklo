@@ -31,7 +31,7 @@ Das Fenster verschiebt sich immer dann, wenn ein Paket herausgenommen wird
  Das Fenster wird nach rechts verschoben, wodurch gespeicherte Pakete verloren gehen
  
 |-------|							===>		|-------|					===>		|-------|
- ^          ^								^			^								 ^     ^
+ ^          ^								^			^						 ^     ^
 Abspielpos	Incoming						alte pos	Incoming					neue Pos Incoming
 
 

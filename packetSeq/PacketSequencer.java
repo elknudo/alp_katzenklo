@@ -1,7 +1,7 @@
 package ub3.packetSeq;
 import java.util.Vector;
 
-public class PacketSequencer<T extends IndexedMsg> {
+public class PacketSequencer<T extends PacketProtos> {
 	private int valueRange = -1;
 	private int current_index = -1;
 	private int window_size = 128; // cannot exceed valueRange
