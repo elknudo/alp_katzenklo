@@ -1,0 +1,3 @@
+a) alpv.calendar.CalendarServerA
+Der Server teilt IDs an die Events in aufsteigender Reihenfolge.
+Die Events werden nicht nach Startzeit sortiert (Event.compare wird nicht verwendet).
