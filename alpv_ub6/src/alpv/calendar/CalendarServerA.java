@@ -22,7 +22,7 @@ public class CalendarServerA implements CalendarServer {
 			CalendarServerA serv = this;
 			CalendarServer stub = (CalendarServer) UnicastRemoteObject
 					.exportObject(serv, iPort);
-			Registry registry = LocateRegistry.getRegistry();
+			Registry registry = LocateRegistry.createRegistry(iPort);
 			registry.rebind(name, stub);
 			System.out.println("Server: CalendarServer bound");
 		} catch (Exception e) {

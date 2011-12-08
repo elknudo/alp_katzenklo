@@ -25,6 +25,7 @@ public class Client implements Runnable {
 			e.printStackTrace();
 			return false;
 		}
+		run();
 		return true;
 	}
 
