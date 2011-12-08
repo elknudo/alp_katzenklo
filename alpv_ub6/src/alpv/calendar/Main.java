@@ -17,12 +17,13 @@ public class Main {
 			int i = 0;
 
 			if(args[i].equals("server")) {
-				// TODO
+				String port = args[i+1];
+				(new CalendarServerA()).init(port);
 			}
 			else if(args[i].equals("client")) {
 				String ip = args[i+1];
 				String port = args[i+2];
-				(new Thread (new Client(ip, port))).start();
+				(new Client()).init(ip, port);
 			}
 			else
 				throw new IllegalArgumentException();

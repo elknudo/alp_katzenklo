@@ -15,7 +15,7 @@ public class Test {
 	
 	private static void b() {
 		/* client SERVERIPADDRESS SERVERPORT */
-		String[] argz = { "client", "f00.0.0.1", "666" };
+		String[] argz = { "client", "127.0.0.1", "666" };
 		Main.main(argz);
 		
 	}

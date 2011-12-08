@@ -3,21 +3,34 @@ package alpv.calendar;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.rmi.*;
+import java.rmi.registry.*;
 
 public class Client implements Runnable {
 	protected InetSocketAddress serverAddress;
 	protected CalendarServer serv;
 
-	public Client(String ip, String port) {
-
+	public boolean init(String ip, String port) {
+		// ip unused
 		// serverAddress = new InetSocketAddress(ip, Integer.parseInt(port));
-		// stub = RMI registry server blub
 
-		serv = new CalendarServerA();
+		try {
+			String name = "Calendar";
+			Registry registry = LocateRegistry.getRegistry(Integer
+					.parseInt(port));
+			serv = (CalendarServer) registry.lookup(name);
+
+		} catch (Exception e) {
+			System.err.println("Client init exception:");
+			e.printStackTrace();
+			return false;
+		}
+		return true;
 	}
 
 	public void run() {
-		System.out.println("Manage your calendar with add, remove, update and list");
+		System.out
+				.println("Manage your calendar with add, remove, update and list");
 		boolean running = true;
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
@@ -43,12 +56,12 @@ public class Client implements Runnable {
 						System.out.println("Event updated.");
 					else
 						System.out.println("could not remove event");
-				} else if ( input.startsWith("list")) {
+				} else if (input.startsWith("list")) {
 					String name = nameFromConsole();
 					List<Event> le = serv.listEvents(name);
-					if(le.size() == 0)
+					if (le.size() == 0)
 						System.out.println("No events for " + name);
-					for(Event e : le)
+					for (Event e : le)
 						printEvent(e);
 				}
 
@@ -107,12 +120,14 @@ public class Client implements Runnable {
 		return null;
 	}
 
+	// print information of event
 	private void printEvent(Event e) {
-		System.out.println("Event: " + e.getName() + ", " + rrr(e.getUser())
+		System.out.println("Event: " + e.getName() + ", " + stringConcat(e.getUser())
 				+ ", " + e.getBegin());
 	}
 
-	private static String rrr(String[] arr) {
+	// concatenate strings from array
+	private static String stringConcat(String[] arr) {
 		String s = "";
 		for (int i = 0; i < arr.length; i++)
 			s = s.concat(" " + arr[i]);

@@ -1,6 +1,9 @@
 package alpv.calendar;
 
-import java.rmi.RemoteException;
+
+import java.rmi.*;
+import java.rmi.registry.*;
+import java.rmi.server.*;
 import java.util.*;
 
 /* Server for a) */
@@ -10,6 +13,24 @@ public class CalendarServerA implements CalendarServer {
 
 	public CalendarServerA() {
 		events = new Vector<Event>();
+	}
+
+	public boolean init(String port) {
+		try {
+			int iPort = Integer.parseInt(port);
+			String name = "Calendar";
+			CalendarServerA serv = this;
+			CalendarServer stub = (CalendarServer) UnicastRemoteObject
+					.exportObject(serv, iPort);
+			Registry registry = LocateRegistry.getRegistry();
+			registry.rebind(name, stub);
+			System.out.println("Server: CalendarServer bound");
+		} catch (Exception e) {
+			System.err.println("Server: Calendar exception:");
+			e.printStackTrace();
+			return false;
+		}
+		return true;
 	}
 
 	/**
