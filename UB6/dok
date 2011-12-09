@@ -1,0 +1,70 @@
+Benutzung:
+Mithilfe von Test.java kann gleichzeitig der Server und _ein_ Client gestartet werden.
+Wenn die Main direkt ausgeführt wird, darf Port 0 nicht verwendet werden (sonst crashts)
+
+a) alpv.calendar.CalendarServerA
+Der Server teilt IDs an die Events in aufsteigender Reihenfolge.
+Die Events werden nicht nach Startzeit sortiert (Event.compare wird nicht verwendet).
+
+b) Nach Eingabe eines der folgenden Befehle wird der Benutzer aufgefordert die benötigten Daten einzugeben:
+add
+remove
+update
+list
+next
+
+mit Eingabe von q kann der Client geschlossen werden.
+
+
+c) Die Registrierung und Verbindung geschieht in Client.init() und CalendarServerImpl.init()
+
+
+d) Der CalendarServerImpl wird zum Monitor, alle nach außen sichtbaren funktionen werden als synchronized deklariert.
+Außerdem erhält der Server einen eigenen Thread, der jede Sekunde wartende Clienten weckt.
+Bei Aufruf von getNextEvent(user) wird der Aufruf per wait() blockiert. Durch den Serverthread wird dieser jeder Sekunde aufgeweckt.
+Nachdem ein wartender Client aufgeweckt wurde, prüft dieser ob das Event auf das er wartet jetzt stattfindet. Falls ja, gibt er das Event zurück,
+ansonsten legt er sich schlafen. Außerdem gibt es einen Mechanismus mit dem überprüft wird, ob es neue Events gibt oder sich das Event geändert hat.
+Dazu wird mithilfe von tLastChange festgehalten, wann zuletzt eine Änderung bei den Events passiert ist. Ein wartender Client
+überprüft nun immer, ob sich in der Zeit in der er geschlafen hat etwas geändert hat, indem er schaut, ob der Zeitpunkt tLastChanged
+nach dem Zeitpunkt tCheck, an dem er selbst die Events angeschaut hat, liegt.
+
+Beispiel 
+Client 1 gibt ein Event ein und wartet mit getNextEvent() darauf:
+Manage your calendar with add, remove, update, list and next
+add
+Event info: 
+Name: ha
+Users (comma seperated, no whitespaces): 1,2
+Time from now in secs: 100
+Event added with id 0
+next
+Name: 1
+-------------(client 2 wird jetzt tätig)------------
+Event 0: 'ha'  1 2, Thu Dec 08 21:44:35 CET 2011
+
+Client 2 verändert das Event, an dem Client 1 und er teilnehmen:
+Manage your calendar with add, remove, update, list and next
+update
+id: 0
+Event info: 
+Name: ha
+Users (comma seperated, no whitespaces): 1,2
+Time from now in secs: 10
+Event updated.
+next
+Name: 2
+Event 0: 'ha'  1 2, Thu Dec 08 21:44:35 CET 2011
+
+Ende
+Client 1 hat also die Änderung mitbekommen und hat entsprechend früher aufgehört zu warten.
+
+e) Nicht implementiert.
+
+f) 
+Die Callback Methode ist vorzuziehen, da sie leichter erweiterbar ist und ressourcenschonender ist.
+Zur Erweiterung muss bei der Monitor-Lösung immer darauf geachtet werden, dass alle Clienten synchronisiert werden. 
+Dadurch kann es schnell zu Fehlern kommen. In der Callback Variante muss hingegen nur das Callback Interface erweitert werden.
+Bei einer Monitor-Lösung steigt außerdem die Serverbelastung mit der Anzahl der Clients stark an, und es ist nicht leicht dies zu optimieren.
+Bei der Callback Lösung ist dies einfacher, da die Methodik an einer Stelle im Server zentriert ist. 
+
+
