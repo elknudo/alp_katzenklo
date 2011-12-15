@@ -17,6 +17,7 @@ public class WorkerImpl implements Worker,Runnable,Serializable {
 			Pool<Argument> argpool, Pool<Result> respool)
 			throws RemoteException {
 		
+		this.notify();
 		Argument a;
 		synchronized (argpool) {
 			a = argpool.get();	
@@ -32,13 +33,43 @@ public class WorkerImpl implements Worker,Runnable,Serializable {
 		this.threads = threads;
 		this.ADDR = addr;
 		this.PORT = port;
+		register(this,threads,addr,port);
+	
 	}
 	
 	public WorkerImpl(int threads) throws RemoteException{
 		this.threads = threads;
+		register(this,threads);
 	}
 	
 	public WorkerImpl() throws RemoteException{
+		register(this,threads); 
+	}
+	
+	private static void register(WorkerImpl wi,int threads){
+		for(int i = 0; i<threads;i++)
+				try {
+					Registry registry = LocateRegistry.getRegistry(ADDR,PORT);
+					master = (Master) registry.lookup("master");
+					master.registerWorker(wi);
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				} catch (NotBoundException e) {
+					e.printStackTrace();
+				}
+	}
+	
+	private static void register(WorkerImpl wi,int threads,String addr, int port){
+		for(int i = 0; i<threads;i++)
+				try {
+					Registry registry = LocateRegistry.getRegistry(addr,port);
+					master = (Master) registry.lookup("master");
+					master.registerWorker(wi);
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				} catch (NotBoundException e) {
+					e.printStackTrace();
+				}
 	}
 	
 	public static void main(String[] args){
@@ -49,7 +80,6 @@ public class WorkerImpl implements Worker,Runnable,Serializable {
 				thread = new WorkerImpl();
 				thread.run();
 			} catch (RemoteException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -60,17 +90,12 @@ public class WorkerImpl implements Worker,Runnable,Serializable {
 	@Override
 	public void run() {
 		try {
-			Registry registry = LocateRegistry.getRegistry(ADDR,PORT);
-			master = (Master) registry.lookup("master");
-			master.registerWorker(new WorkerImpl());
-		} catch (RemoteException e) {
-			// TODO Auto-generated catch block
+			synchronized (this) {
+				this.wait();
+			}
+		} catch (InterruptedException e) {
 			e.printStackTrace();
-		} catch (NotBoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} 
-		
+		}
 	}
 	
 }
