@@ -50,7 +50,7 @@ public class JobImpl implements Job<List<Integer>, List<Integer>, RemoteFutureIm
 		}
 		
 		task.exec(list);
-		
+		rfi.set(list);
 	}
 
 	public JobImpl(){
