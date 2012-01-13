@@ -26,9 +26,9 @@ public class Main {
 
 			// find links
 			int ind = 0;
-			while ((ind = doc.indexOf("<a href=\"", ind + 1)) != -1) {
-				begins.add(ind + 9);
-				ends.add(doc.indexOf("\"", ind + 9));
+			while ((ind = doc.indexOf("href=\"", ind + 1)) != -1) {
+				begins.add(ind + 6);
+				ends.add(doc.indexOf("\"", ind + 6));
 			}
 
 			if (begins.size() != ends.size()) {
@@ -69,7 +69,7 @@ public class Main {
 
 	public static void main(String[] args) {
 
-		HttpURL url = new HttpURLImpl("http://www.fu-berlin.de/einrichtungen");
+		HttpURL url = new HttpURLImpl("http://ericsturm.de/");
 
 		// look for links
 		System.out.println("Linkz: ");

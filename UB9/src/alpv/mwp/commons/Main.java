@@ -1,5 +1,7 @@
 package alpv.mwp.commons;
 
+import alpv.mwp.crawler.CrawlerClient;
+
 public class Main {
 
 	public static void main(String[] args) {
@@ -7,7 +9,6 @@ public class Main {
 		ServerImpl.main(null);
 		WorkerImpl.main(null);
 		WorkerImpl.main(null);
-		// RaytracingClient.main(null);
-
+		CrawlerClient.main(null);
 	}
 }

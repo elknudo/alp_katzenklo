@@ -11,10 +11,14 @@ public class HttpURLImpl implements HttpURL {
 	public HttpURLImpl(String url) {
 		if (url.startsWith("http://")) {
 			final int hostBegin = 7;
-			final int hostEnd = url.indexOf('/', hostBegin);
+			int hostEnd = url.indexOf('/', hostBegin);
+			if(hostEnd<0)
+				hostEnd = url.length();
 			this.host = url.substring(hostBegin, hostEnd);
-			final int pathBegin = hostEnd + 1;
+			int pathBegin = hostEnd + 1;
 			final int pathEnd = url.length();
+			if(pathBegin > pathEnd)
+				pathBegin = pathEnd;
 			this.path = url.substring(pathBegin, pathEnd);
 		} else {
 			System.err.println("Url-String is not a http url: " + url);

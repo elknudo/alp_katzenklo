@@ -59,13 +59,21 @@ public class ServerImpl implements Server, Master, Runnable {
 					// execute task
 					Task task = currentJob.getTask();
 					System.out.println(System.currentTimeMillis() + "  launching task on workers");
-					for (Worker w : workers)
-						w.start(task, argPool, resPool);
+					int first = 0;
+					while(argPool.size()>0){
+						for (Worker w : workers)
+							if(argPool.size()>0)
+								w.start(task, argPool, resPool);
+						if(first==0){
+							Thread.sleep(20000);
+							first--;
+						}
+							
+						currentJob.merge(resPool);
 
+					}
 					// merge
 					System.out.println(System.currentTimeMillis() + "  Merging job");
-
-					currentJob.merge(resPool);
 
 					System.out.println(System.currentTimeMillis() + "  Job merged");
 
@@ -80,6 +88,9 @@ public class ServerImpl implements Server, Master, Runnable {
 
 				} catch (RemoteException e) {
 					System.out.println(System.currentTimeMillis() + "  Error during execution of job");
+					e.printStackTrace();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			} else {
