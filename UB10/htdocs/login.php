@@ -5,9 +5,6 @@
       $username = $_POST['username'];
       $password = $_POST['password'];
 
-      $hostname = $_SERVER['HTTP_HOST'];
-      $path = dirname($_SERVER['PHP_SELF']);
-
       // Benutzername und Passwort werden überprüft
       if ($username == 'bla' && $password == 'asdf') {
        $_SESSION['loggedin'] = true;

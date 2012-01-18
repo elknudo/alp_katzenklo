@@ -9,21 +9,16 @@
 
 <?php
 	
-	try{
-		if(isset($_SESSION)&&$_SESSION['loggedin']==true){
-			echo '<a href="logout.php">logout</a>';
-			echo '<br><br><br><br>
-				<form action="upload.php" method="post" enctype="multipart/form-data">
-				<input type="file" name="picture"><br>
-				<input type="submit" value="Hochladen">
-				</form>';}
-		else
-			echo '<a href="login.php">login to upload pictures</a>';
-	}
-	catch(Exception $e){
-		echo'<a href="login.php">logout</a>';
+	if(isset($_SESSION)&&$_SESSION['loggedin']==true){
+		echo '<a href="logout.php">logout</a>';
+		echo '<br><br><br><br>
+			<form action="upload.php" method="post" enctype="multipart/form-data">
+			<input type="file" name="picture"><br>
+			<input type="submit" value="Hochladen">
+			</form>';}
+	else
+		echo '<a href="login.php">login to upload pictures</a>';
 
-	}
 	echo '<br><br><br><br><br>';
 
 	$path = "/opt/lampp/htdocs/userdata";

@@ -1,4 +1,4 @@
-<?php include('auth.php'); ?>
+<?php include('auth_hard.php'); ?>
 <html>
 <head>
 <title>Gallery Champaign
